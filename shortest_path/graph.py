@@ -1,11 +1,12 @@
 import numpy as np
+from math import inf
 
  
 class Graph():
     def __init__(self,_edges:list=[]):
         self.order:int=0 
         #извлекли номера вершин из списка ребер , выкинули копии
-        self.weight_matrix:np.array=np.full((self.order,self.order),np.nan)
+        self.weight_matrix:np.array=np.full((self.order,self.order),inf)
         self.vertices:dict={}
         for edge in _edges:
             self.add_edge(edge[0],edge[1],edge[2])
@@ -19,7 +20,7 @@ class Graph():
             self.vertices[vertex]=self.order-1 
             #добавили новую вершину в словарь вершин(-1 т.к первая вершина 
             # отвечает за нулевую строчку в матрице весов)
-            self.weight_matrix=np.pad(self.weight_matrix,((0,1),(0,1)), mode="constant",constant_values=np.nan)
+            self.weight_matrix=np.pad(self.weight_matrix,((0,1),(0,1)), mode="constant",constant_values=inf)
             #расширили матрицу весов
 
     def add_edge(self,start_vertex,end_vertex,weight=0):
@@ -50,11 +51,11 @@ class Graph():
     
     def has_edge(self,start_vertex,end_vertex)->bool:
         weight=self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]
-        return weight==weight
+        return weight!=inf
     
     def edge_weight(self,start_vertex,end_vertex):
         weight=self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]
-        if weight!=weight:
+        if weight==inf:
             raise KeyError(f"Edge {start_vertex, end_vertex} not in {self}")
         else:
             return weight
@@ -79,8 +80,8 @@ class Graph():
         self.order-=1
 
     def remove_edge(self,start_vertex,end_vertex):
-        self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]=np.nan
-        self.weight_matrix[self.vertices[end_vertex]][self.vertices[start_vertex]]=np.nan
+        self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]=inf
+        self.weight_matrix[self.vertices[end_vertex]][self.vertices[start_vertex]]=inf
 
 
 if __name__=="__main__":
