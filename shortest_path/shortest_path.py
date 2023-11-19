@@ -4,12 +4,13 @@ from math import inf
 #https://chat.openai.com/share/4ec5963e-e542-471c-9dd1-d0cd08507fb1
 def shortest_path(graph, start, end):
     Q=graph.vertices.copy()
-    distances = {vertex: float('inf') for vertex in graph.vertices.keys()}
+    distances = {vertex: inf for vertex in graph.vertices.keys()}
     distances[start] = 0
-    parents = {}
+    parents = {} # parents[u]=v
 
     while Q:
         u = min(Q, key=lambda vertex: distances[vertex])
+        #выбрали вершину из Q с минимальной меткой  
 
         if u == end:
             return build_path(parents, start, end)

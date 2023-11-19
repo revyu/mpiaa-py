@@ -82,6 +82,10 @@ class Graph():
     def remove_edge(self,start_vertex,end_vertex):
         self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]=inf
         self.weight_matrix[self.vertices[end_vertex]][self.vertices[start_vertex]]=inf
+    
+    def __str__(self):
+        return str(self.weight_matrix)
+
 
 
 if __name__=="__main__":
