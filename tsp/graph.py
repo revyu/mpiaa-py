@@ -50,7 +50,11 @@ class Graph():
                                ])
         return result
     
-    def has_edge(self,start_vertex,end_vertex)->bool:
+    def has_edge(self,start_vertex,end_vertex)->bool: 
+        if not(self.has_vertex(start_vertex)):
+            return False
+        if not(self.has_vertex(end_vertex)):
+            return False
         weight=self.weight_matrix[self.vertices[start_vertex]][self.vertices[end_vertex]]
         return weight!=inf
     
