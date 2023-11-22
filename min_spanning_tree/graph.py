@@ -42,11 +42,12 @@ class Graph():
         result:list=[]
         if not self.has_vertex(src_vertex):
             raise KeyError(f"Vertex {src_vertex} not in {self}")
-        for i in range(self.order):
-            if self.has_edge(src_vertex,self.vertices[i]):
-                result.append([self.vertices[src_vertex],
-                               self.vertices[i],
-                               self.weight_matrix[self.vertices[src_vertex]][i]])
+        for i in self.vertices:
+            if self.has_edge(src_vertex,i):
+                result.append([src_vertex,
+                               i,
+                               self.weight_matrix[self.vertices[src_vertex]][self.vertices[i]]
+                               ])
         return result
     
     def has_edge(self,start_vertex,end_vertex)->bool:
@@ -85,6 +86,19 @@ class Graph():
     
     def __str__(self):
         return str(self.weight_matrix)
+    
+    def get_all_edges(self):
+        edges=[]
+
+        for i in self.vertices:
+            adj_edges=self.get_adjacent_edges(i)
+            for i in adj_edges:
+                if [i[1],i[0],i[2]] not in edges: #такое же ребро но вершины в другом порядке
+                    edges.append(i)
+
+        return sorted(edges,key=lambda i:i[2])
+
+    
 
 
 
