@@ -93,7 +93,24 @@ def TSP_BnB(g,start):
     visited=[start]
     return BnB(g,visited,best_path)
 
+def TSP_greedy(g:Graph,start):
+    current=start
+    path=[current]
+    
+    while len(path)!=len(g.vertices.keys()):
+        min_weight=inf
+        for v in g.get_adjacent_vertices(current):
+            if v not in path and g.edge_weight(v,current)<min_weight:
+                min_weight=g.edge_weight(v,current)
+                next_vertex=v
+        if next_vertex!=current:
+            path.append(next_vertex)
+        else:
+            return []
+        current=next_vertex
 
+
+    return path
                 
 
 
