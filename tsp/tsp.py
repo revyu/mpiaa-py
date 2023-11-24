@@ -29,69 +29,52 @@ def TSP(g:Graph,start_vertex):
     
     return min_path
 
-def get_len_path(g,path):
-    weight=0
-    current=path[0]
-    path_is_valid=True
-    for v in range(1,len(path)):
-        if g.has_edge(current,path[v]):
-            weight+=g.edge_weight(current,path[v])
-            current=path[v]
+def lower_bound(graph,path):
+    lower_bound = 0
+    
+    # добавляем веса посещенных ребер
+    for i in range(len(path) - 1):
+        lower_bound += graph.edge_weight(path[i], path[i + 1])
+    
+    # добавляем минимальные веса для завершения пути через все вершины
+    for vertex in graph.vertices.keys():
+        if vertex not in path:
+            min_weight = min(graph.edge_weight(path[-1], v) for v in graph.vertices.keys() if v != path[-1])
+            lower_bound += min_weight
+    
+    return lower_bound
+
+
+def BnB(graph, current_path, current_cost, min_path, min_cost):
+    # если путь содержит все вершины, проверяем и обновляем минимальный путь и его стоимость
+    if len(current_path) == len(graph.vertices):
+        current_cost += graph.edge_weight(current_path[-1], current_path[0])  # замыкаем путь
+        if current_cost < min_cost:
+            return current_path + [current_path[0]], current_cost # замыкаем путь
         else:
-            path_is_valid=False
-            break
+            return min_path, min_cost
     
-    if path_is_valid:
-        return weight
-    else:
-        return inf
-
-def lower_bound(g,visited:list):
-    edges_from_path=[]
-    current=visited[0]
-    for i in range(len(visited)):
-        edges_from_path.append([current,visited[i],g.edge_weight(current,visited[i])])
+    # разветвление - перебираем все вершины, которые еще не входят в путь
+    for vertex in graph.vertices.keys():
+        if vertex not in current_path:
+            new_path = current_path + [vertex]
+            new_cost = current_cost + graph.edge_weight(current_path[-1], vertex)
+            if lower_bound(graph,new_path) < min_cost:  # проверяем, стоит ли продолжать разветвление
+                min_path, min_cost = BnB(graph,new_path, new_cost, min_path, min_cost)
     
-    graph_of_path=Graph(edges_from_path)
+    return min_path, min_cost
 
-    total_weight=0
-
-    for v in g.vertices:
-        #dirt так как будем убирать копии ребер
-        #сначала пишем смотрим на ребра из path потом на ребра из остального графа
-        preferable_edges_dirt=sorted(graph_of_path.get_adjacent_edges(v),key=lambda i:i[2])
-        preferable_edges_dirt=preferable_edges_dirt+sorted(g.get_adjacent_edges(v),key=lambda i:i[2])
-        preferable_edges=[]
-        for edge in preferable_edges_dirt:
-            if not(edge in preferable_edges or [edge[1],edge[0],edge[2]] in preferable_edges):
-                preferable_edges.append(edge)
-
-        
-        if len(preferable_edges)<2:
-            return inf
-        else:
-            total_weight+=preferable_edges[0][2]
-            total_weight+=preferable_edges[1][2]
+def TSP_BnB(graph,start):
     
-    return total_weight/2
-        
+    if graph.order<2:
+        return [] , 0
+    
+    initial_path = [start]
+    initial_cost = 0
+    min_path,min_cost= BnB(graph,initial_path, initial_cost, initial_path, float('inf'))
+    
+    return min_path , min_cost
 
-def BnB(g,visited:list,best_path):
-    if len(visited)==len(g.vertices.keys()):
-        return min(get_len_path(g,best_path),get_len_path(g,visited))
-    for v in set(g.vertices.keys())-set(visited):
-        vnext=visited+[v]
-        if lower_bound(g,vnext)<get_len_path(best_path):
-            path=BnB(g,visited,best_path)
-            best_path=min(get_len_path(path),get_len_path(best_path))
-    return best_path
-
-
-#все написано максимально по псевдокоду читай методичку
-def TSP_BnB(g,start):
-    best_path=[]
-    visited=[start]
-    return BnB(g,visited,best_path)
 
 def TSP_greedy(g:Graph,start):
     current=start
