@@ -1,8 +1,7 @@
-from tsp import TSP,TSP_BnB,TSP_greedy
+from tsp import TSP,TSP_BnB,TSP_greedy,two_opt_improve,TSP_LS
 from graph import Graph
 from numpy import random as r
 import time
-
 
 def get_Kn(n:int):
     edges=[]
@@ -18,7 +17,6 @@ def get_len_path(g:Graph,path:list):
         weight+=g.edge_weight(current,path[i])
         current=path[i]
     return weight
-
 
 
 for i in range(4,10):
@@ -39,7 +37,13 @@ for i in range(4,10):
     path=TSP_greedy(g,0)
     end=time.time()
     print(f"For size{i} time TSP_greedy is {end-start} with weight {get_len_path(g,path)}")
+
+    start=time.time()
+    path=TSP_LS(g)
+    end=time.time()
+    print(f"For size{i} time TSP_LS is {end-start} with weight {get_len_path(g,path)}")
     print("\n\n")
+
 
 for i in range(4,10):
     g=get_Kn(i*3)
@@ -53,7 +57,17 @@ for i in range(4,10):
     path=TSP_greedy(g,0)
     end=time.time()
     print(f"For size{i*3} time TSP_greedy is {end-start} with weight {get_len_path(g,path)}")
+    
+
+    start=time.time()
+    path=TSP_LS(g)
+    end=time.time()
+    print(f"For size{i*3} time TSP_LS is {end-start} with weight {get_len_path(g,path)}")
     print("\n\n")
+
+
+
+
 
 
 

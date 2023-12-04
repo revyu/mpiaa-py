@@ -94,17 +94,97 @@ def TSP_greedy(g:Graph,start):
 
 
     return path
-                
 
+def get_weight(g:Graph,path):
+    weight=0
+    current=path[0]
+    for i in range(1,len(path)):
+        next=path[i]
+        weight+=g.edge_weight(current,next)
+        current=next
+    return weight
+        
+def transform(path,a,b,c,d):
+    path_dict={path[i]:path[(i+1)%len(path)] for i in range(len(path)-1)}
+    #от родителя к предку
+    path_dict_reversed={path[(i+1)%len(path)]:path[i] for i in range(len(path)-1)}
+    #от предка к родителю
+
+    new_path=[]
+
+    new_path.append(a)
+
+    current=c
+    while current!=b:
+        new_path.append(current)
+        current=path_dict_reversed[current]
+    else:
+        new_path.append(current)
+
+    current=d
+    while current!=a:
+        new_path.append(current)
+        current=path_dict[current]
+    else:
+        new_path.append(current)
+
+    return new_path 
+
+
+def two_opt_improve(g:Graph,path):
+
+    non_adjacent_edges=[]
+    for a in path:
+        for b in path:
+            for c in path:
+                for d in path:
+                    if (len(set([a,b,c,d]))==4 and 
+                        [[a,b],[c,d]] not in non_adjacent_edges and
+                        [[a,b],[d,c]] not in non_adjacent_edges and
+                        [[b,a],[c,d]] not in non_adjacent_edges and
+                        [[b,a],[d,c]] not in non_adjacent_edges and
+                        [[c,d],[b,a]] not in non_adjacent_edges and
+                        [[c,d],[a,b]] not in non_adjacent_edges and
+                        [[d,c],[b,d]] not in non_adjacent_edges and
+                        [[d,c],[a,b]] not in non_adjacent_edges 
+                        ):
+                        non_adjacent_edges.append([[a,b],[c,d]])
+    
+    for i in non_adjacent_edges:
+        a=i[0][0]
+        b=i[0][1]
+        c=i[1][0]
+        d=i[1][1]
+        old_weight=g.edge_weight(a,b)+g.edge_weight(c,d)
+        new_weight=g.edge_weight(a,c)+g.edge_weight(b,d)
+        if new_weight<old_weight:
+            return transform(path,a,b,c,d)
+        
+    return path
+
+        
+                 
+def TSP_LS(g:Graph):
+    path=list(g.vertices.keys())
+    path=path+[path[0]]#замкнули путь
+    while True:
+        improved_path=two_opt_improve(g,path)
+        while get_weight(g,improved_path)<get_weight(g,path):
+            path=improved_path
+        else:
+            return path
+    
+    
 
 if __name__=="__main__":
 
-    g = Graph([(0, 1, 4.0), (0, 7, 9.0),
-                   (1, 2, 8.0), (1, 7, 11.0),
-                   (2, 3, 7.0), (2, 5, 4.0), (2, 8, 2.0),
-                   (3, 4, 9.0), (3, 5, 14.0),
-                   (4, 5, 10.0),
-                   (5, 6, 2.0),
-                   (6, 7, 1.0), (6, 8, 6.0),
-                   (7, 8, 7.0)]) 
-    print(TSP(g,0))
+    g = Graph([(0, 1, 4.0), (0, 2, 3.0),(0,3,4),
+                   (1, 2, 8.0), (1, 3, 11.0),
+                   (2, 3, 7.0)]) 
+    v=list(g.vertices.keys())
+    v=v+[v[0]]
+    print(v)
+    print(transform(v,0,1,2,3))
+    print(TSP_LS(g))
+    
+
