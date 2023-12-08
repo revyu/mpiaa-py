@@ -1,6 +1,16 @@
 from graph import Graph
 from itertools import permutations as ps
 from math import inf
+from numpy import random as r
+
+def isequal(list1,list2):
+    if len(list1)!=len(list2):
+        return False
+    for i in range(len(list1)):
+        if list1[i]!=list2[i]:
+            return False
+    
+    return True
 
 def TSP(g:Graph,start_vertex):
     paths=ps(g.vertices.keys()-[start_vertex])
@@ -133,23 +143,17 @@ def transform(path,a,b,c,d):
 
 def two_opt_improve(g:Graph,path):
 
+    edges_from_path=[[path[i],path[(i+1)%len(path)]] for i in range(len(path)-1)]
     non_adjacent_edges=[]
-    for a in path:
-        for b in path:
-            for c in path:
-                for d in path:
-                    if (len(set([a,b,c,d]))==4 and 
-                        [[a,b],[c,d]] not in non_adjacent_edges and
-                        [[a,b],[d,c]] not in non_adjacent_edges and
-                        [[b,a],[c,d]] not in non_adjacent_edges and
-                        [[b,a],[d,c]] not in non_adjacent_edges and
-                        [[c,d],[b,a]] not in non_adjacent_edges and
-                        [[c,d],[a,b]] not in non_adjacent_edges and
-                        [[d,c],[b,d]] not in non_adjacent_edges and
-                        [[d,c],[a,b]] not in non_adjacent_edges 
-                        ):
-                        non_adjacent_edges.append([[a,b],[c,d]])
-    
+
+    for i in edges_from_path:
+        for j in edges_from_path:
+            a,b=i
+            c,d=j
+            if len(set([a,b,c,d]))==4:
+                non_adjacent_edges.append([[a,b],[c,d]])
+
+
     for i in non_adjacent_edges:
         a=i[0][0]
         b=i[0][1]
@@ -159,7 +163,7 @@ def two_opt_improve(g:Graph,path):
         new_weight=g.edge_weight(a,c)+g.edge_weight(b,d)
         if new_weight<old_weight:
             return transform(path,a,b,c,d)
-        
+    
     return path
 
         
@@ -173,18 +177,154 @@ def TSP_LS(g:Graph):
             path=improved_path
         else:
             return path
+
+def SUS(generation,generation_weights,N):
+    F=0
+    for i in generation_weights:
+        F+=i
+    dist=F/N
+    start=r.rand()*dist
+    chosen=[]
+    k=0
+    sumweight=generation_weights[0]
+    for i in range(N):
+        point=start+i*dist
+        while sumweight<point:
+            k+=1
+            sumweight+=generation_weights[k]
+        chosen.append(generation[k])
+    return chosen
+
+
+
+def CrossoverER(g:Graph,dad,mom):
     
+
+    edges_from_dad=[]
+    edges_from_mom=[]
+
+    current_dad=dad[0]
+    current_mom=mom[0]
+    for i in range(1,len(dad)):#получаем ребра из путей   mom и dad
+        next_dad=dad[i]
+        next_mom=mom[i]
+        edges_from_dad.append([current_dad,next_dad,g.edge_weight(current_dad,next_dad)])
+        edges_from_mom.append([current_mom,next_mom,g.edge_weight(current_mom,next_mom)])
+        current_dad=next_dad
+        current_mom=next_mom
     
+    edge_map={i:[] for i in g.vertices.keys()}
+
+    for i in g.vertices.keys():
+        for j in edges_from_dad:
+            if j[0]==i or j[1]==i:# проверка смежности
+                edge_map[i].append(j)
+        for j in edges_from_mom:
+            if j[0]==i or j[1]==i:# проверка смежности
+                edge_map[i].append(j)
+    
+
+    offspring=[]
+
+    current=r.choice(list(g.vertices.keys()))
+    offspring.append(current)
+    
+    while len(offspring)<len(dad)-1:
+        edges=[]
+        
+        #аналог numpy.flatten()
+        for key in edge_map:
+            edges.extend(edge_map[key])
+
+
+
+        candidates=Graph(edges).get_adjacent_vertices(current)
+
+        #здесь сложное поведение массива когда удаляем ребро из него его размер
+        #сокращается изза этого иногда не удаляется второе ребро
+        #поэтому приходится неявно изменять счетчик
+        
+        for j in edge_map.keys():
+            e=0
+            while e<len(edge_map[j]):# ищем смежные с current вершины в edge map и удаляем их
+                if current==edge_map[j][e][0] or current==edge_map[j][e][1]:
+                    edge_map[j].remove(edge_map[j][e])
+                    e-=1
+                e+=1
+       
+        
+        # сколько раз встречается в edge_map
+        found_in_edge_map={i:0 for i in candidates}
+
+        for i in candidates:
+            for j in edge_map.keys():
+                for edge in edge_map[j]:
+                    if edge[0]==i or edge[1]==i:# проверка смежности
+                        found_in_edge_map[i]+=1
+
+        next=min(found_in_edge_map, key=found_in_edge_map.get)
+
+        current=next
+        offspring.append(current)
+
+    return offspring+[offspring[0]]
+        
+
+def TSP_Gen(g:Graph,p:int,N:int,maxIt:int,pm:float):
+    
+    v=list(g.vertices.keys())
+    generation=[]
+    generation_weights=[0 for i in range(p)]
+    for i in range(p):
+        r.shuffle(v) #перемешивает маршрут
+        _=v+[v[0]]
+        generation.append(_)
+        
+        
+    
+    for i in range(maxIt):
+        max_weight=0
+        for i in range(p):
+            generation_weights[i]=get_weight(g,generation[i])
+            if generation_weights[i]>max_weight:
+                max_weight=generation_weights[i]
+        
+        
+        for i in range(p):
+            generation_weights[i]=max_weight-generation_weights[i]
+
+
+        parents=SUS(generation,generation_weights,N)
+        childs=[]
+        for i in range(p):
+            dad=parents[r.randint(0,len(parents)-1)]
+            mom=parents[r.randint(0,len(parents)-1)]
+            
+            childs.append(CrossoverER(g,dad,mom))
+        
+        for i in range(p):
+            if r.rand()>pm:
+                childs[i]=two_opt_improve(g,childs[i])
+        generation=childs
+    
+
+    min_weight=inf
+    min_ind=0
+    
+    for i in range(p):
+        weight=get_weight(g,generation[i])
+        if weight<min_weight:
+            min_weight=weight
+            min_ind=i
+    
+    return generation[min_ind],min_weight
 
 if __name__=="__main__":
 
     g = Graph([(0, 1, 4.0), (0, 2, 3.0),(0,3,4),
                    (1, 2, 8.0), (1, 3, 11.0),
                    (2, 3, 7.0)]) 
-    v=list(g.vertices.keys())
-    v=v+[v[0]]
-    print(v)
-    print(transform(v,0,1,2,3))
-    print(TSP_LS(g))
-    
-
+    import random
+    for i in range(10):
+        print(random.choices([0,1],k=2))
+    #print(TSP_Gen(g,p=5,N=3,maxIt=20,pm=0.5))

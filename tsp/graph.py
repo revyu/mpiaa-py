@@ -33,9 +33,9 @@ class Graph():
         result:list=[]
         if not self.has_vertex(src_vertex):
             raise KeyError(f"Vertex {src_vertex} not in {self}")
-        for i in range(self.order):
-            if self.has_edge(src_vertex,self.vertices[i]):
-                result.append(self.vertices[i])
+        for i in self.vertices.keys():
+            if self.has_edge(src_vertex,i):
+                result.append(i)
         return result
     
     def get_adjacent_edges(self,src_vertex)->list:
